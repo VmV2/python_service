@@ -9,12 +9,21 @@ db = SQLAlchemy(app)
 
 class Employee(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50))
-    position = db.Column(db.String(50))
-
-    def __init__(self, name, position):
-        self.name = name
-        self.position = position
+    user_id = db.Column(db.Integer)
+    name_of_building = db.Column(db.String(50))
+    coordinates = db.Column(db.String(50))
+    floors = db.Column(db.Integer)
+    equipment = db.Column(db.String(50))
+    floor = db.Column(db.Integer)
+    hours = db.Column(db.Float)
+    def __init__(self, user_id, name_of_building, coordinates, floors, equipment, floor, hours):
+        self.user_id = user_id
+        self.name_of_building = name_of_building
+        self.coordinates = coordinates
+        self.floors = floors
+        self.equipment = equipment
+        self.floor = floor
+        self.hours = hours
 
 
 with app.app_context():   # add existing db check or use alembic
@@ -22,9 +31,14 @@ with app.app_context():   # add existing db check or use alembic
 
 @app.route('/add_employee', methods=['POST'])
 def add_employee():
-    name = request.form['name']
-    position = request.form['position']
-    employee = Employee(name, position)
+    user_id = request.form['user_id']
+    name_of_building = request.form['name_of_building']
+    coordinates = request.form['coordinates']
+    floors = request.form['floors']
+    equipment = request.form['equipment']
+    floor = request.form['floor']
+    hours = request.form['hours']
+    employee = Employee(user_id, name_of_building, coordinates, floors, equipment, floor, hours)
     db.session.add(employee)
     db.session.commit()
     return {"success": 'Employee added successfully'}
@@ -35,8 +49,13 @@ def get_employee(id):
     if employee:
         return jsonify({
             'id': employee.id,
-            'name': employee.name,
-            'position': employee.position
+            'user_id': employee.user_id,
+            'name_of_building': employee.name_of_building,
+            'coordinates': employee.coordinates,
+            'floors': employee.floors,
+            'equipment': employee.equipment,
+            'floor': employee.floor,
+            'hours': employee.hours,
         })
     else:
         return {'error': 'Employee not found'}
