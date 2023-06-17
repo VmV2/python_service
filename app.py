@@ -1,12 +1,11 @@
+from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
-from flask import jsonify
-from flask import Flask
-import httpx
-import requests
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.db'
-db = SQLAlchemy(app)
 
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///employees.db'
+
+db = SQLAlchemy(app)
 
 class Employee(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -18,18 +17,17 @@ class Employee(db.Model):
         self.position = position
 
 
-db.create_all()
-
+with app.app_context():   # add existing db check or use alembic
+    db.create_all()
 
 @app.route('/add_employee', methods=['POST'])
 def add_employee():
-    name = requests.form['name']
-    position = requests.form['position']
-    employee = Employee(name=name, position=position)
+    name = request.form['name']
+    position = request.form['position']
+    employee = Employee(name, position)
     db.session.add(employee)
     db.session.commit()
     return {"success": 'Employee added successfully'}
-
 
 @app.route('/get_employee/<int:id>')
 def get_employee(id):
@@ -42,3 +40,7 @@ def get_employee(id):
         })
     else:
         return {'error': 'Employee not found'}
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", debug=True)
