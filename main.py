@@ -1,3 +1,4 @@
+'''
 import requests
 import telebot
 import logging
@@ -125,4 +126,4 @@ def markup(message):
         bot.send_message(message.chat.id, f"Информация об объектах: \n{bd}", reply_markup=types.ReplyKeyboardRemove())
 
 bot.polling(non_stop=True)
-
+'''

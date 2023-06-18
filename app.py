@@ -63,6 +63,45 @@ def get_employee(id):
     else:
         return {'error': 'Employee not found'}
 
+@app.route('/delete_employee/int:id', methods=['DELETE'])
+def delete_employee(id):
+    try:
+        employee = Employee.query.get(id)
+        if not employee:
+            return jsonify({'error': 'Employee not found'}), 404
+        db.session.delete(employee)
+        db.session.commit()
+        return jsonify({'message': 'Employee deleted successfully'})
+    except SQLAlchemyError as e:
+        error = str(e.dict.get('orig', e))
+        return jsonify({'error': error}), 500
+
+@app.route('/update_employee/int:id', methods=['PUT'])
+def update_employee(id):
+    try:
+        employee = Employee.query.get(id)
+        if not employee:
+            return jsonify({'error': 'Employee not found'}), 404
+        user_id = request.json.get('user_id', employee.user_id)
+        name_of_building = request.json.get('name_of_building', employee.name_of_building)
+        coordinates = request.json.get('coordinates', employee.coordinates)
+        floors = request.json.get('floors', employee.floors)
+        equipment = request.json.get('equipment', employee.equipment)
+        floor = request.json.get('floor', employee.floor)
+        hours = request.json.get('hours', employee.hours)
+
+        employee.user_id = user_id
+        employee.name_of_building = name_of_building
+        employee.coordinates = coordinates
+        employee.floors = floors
+        employee.equipment = equipment
+        employee.floor = floor
+        employee.hours = hours
+        db.session.commit()
+        return jsonify({'message': 'Employee updated successfully'})
+    except SQLAlchemyError as e:
+        error = str(e.dict.get('orig', e))
+        return jsonify({'error': error}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True)
