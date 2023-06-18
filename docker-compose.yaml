@@ -12,7 +12,7 @@ services:
   db:
     image: "docker.io/library/postgres:13.1-alpine"
     environment:
-      - POSTGRES_PASSWORD=example
+      - POSTGRES_PASSWORD=fx14ef
       - POSTGRES_DB=employees
     volumes:
       - db-data:/var/lib/postgresql/data
