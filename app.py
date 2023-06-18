@@ -32,17 +32,17 @@ with app.app_context():   # add existing db check or use alembic
 @app.route('/add_employee', methods=['POST'])
 def add_employee():
     try:
-        user_id = request.form['user_id']
-        name_of_building = request.form['name_of_building']
-        coordinates = request.form['coordinates']
-        floors = request.form['floors']
-        equipment = request.form['equipment']
-        floor = request.form['floor']
-        hours = request.form['hours']
+        user_id = request.json['user_id']
+        name_of_building = request.json['name_of_building']
+        coordinates = request.json['coordinates']
+        floors = request.json['floors']
+        equipment = request.json['equipment']
+        floor = request.json['floor']
+        hours = request.json['hours']
         employee = Employee(user_id, name_of_building, coordinates, floors, equipment, floor, hours)
         db.session.add(employee)
         db.session.commit()
-        return {"success": 'Employee added successfully'}
+        return jsonify({"success": 'Employee added successfully'})
     except SQLAlchemyError as e:
         error = str(e.dict.get('orig', e))
         return jsonify({'error': error}), 500
