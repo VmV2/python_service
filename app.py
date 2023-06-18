@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import SQLAlchemyError
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///employees'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///employees.db'
 
 db = SQLAlchemy(app)
 
@@ -31,21 +31,18 @@ with app.app_context():   # add existing db check or use alembic
 
 @app.route('/add_employee', methods=['POST'])
 def add_employee():
-    try:
-        user_id = request.json['user_id']
-        name_of_building = request.json['name_of_building']
-        coordinates = request.json['coordinates']
-        floors = request.json['floors']
-        equipment = request.json['equipment']
-        floor = request.json['floor']
-        hours = request.json['hours']
-        employee = Employee(user_id, name_of_building, coordinates, floors, equipment, floor, hours)
-        db.session.add(employee)
-        db.session.commit()
-        return jsonify({"success": 'Employee added successfully'})
-    except SQLAlchemyError as e:
-        error = str(e.dict.get('orig', e))
-        return jsonify({'error': error}), 500
+    user_id = request.form['user_id']
+    name_of_building = request.form['name_of_building']
+    coordinates = request.form['coordinates']
+    floors = request.form['floors']
+    equipment = request.form['equipment']
+    floor = request.form['floor']
+    hours = request.form['hours']
+    employee = Employee(user_id, name_of_building, coordinates, floors, equipment, floor, hours)
+    db.session.add(employee)
+    db.session.commit()
+    return {"success": 'Employee added successfully'}
+
 @app.route('/get_employee/<int:id>')
 def get_employee(id):
     employee = Employee.query.get(id)
@@ -62,7 +59,6 @@ def get_employee(id):
         })
     else:
         return {'error': 'Employee not found'}
-
 @app.route('/delete_employee/int:id', methods=['DELETE'])
 def delete_employee(id):
     try:
