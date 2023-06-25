@@ -1,9 +1,16 @@
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import SQLAlchemyError
-
+import requests
+import telebot
+import logging
+from geopy.geocoders import Nominatim
+from telebot import types
+API_URL = "http://127.0.0.1:5000"
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///employees.db'
+bot = telebot.TeleBot('6137135992:AAEVNVGleKNCSXR0ursu3SrWzdlpV49xRWY')
+
 
 db = SQLAlchemy(app)
 
@@ -98,6 +105,51 @@ def update_employee(id):
     except SQLAlchemyError as e:
         error = str(e.dict.get('orig', e))
         return jsonify({'error': error}), 500
+@bot.message_handler(commands=['start'])
+def start_message(message):
+    markup = types.ReplyKeyboardMarkup()
+    butAd = types.KeyboardButton('Добавить рабочее время')
+    butGetInf = types.KeyboardButton('Получить информацию')
+    markup.row(butAd, butGetInf)
+    bot.send_message(message.chat.id, text='Добро пожаловать. Для добавления рабочего времени необходимого на процесс нажмите на кнопку "Добавить"'.format(message.from_user), reply_markup=markup)
+@bot.message_handler(func=lambda message: message.text=="Добавить рабочее время")
+def get_text_messages(message):
+    global user_id
+    user_id = message.from_user.id
+    bot.send_message(message.chat.id, 'Введите название здания')
+    @bot.message_handler(content_types=['text'])
+    def get_name_of_building(message):
+        global name_of_building
+        name_of_building = message.text
+        bot.send_message(message.chat.id, 'Введите адрес здания')
+        bot.register_next_step_handler(message, get_coordinates)
+    def get_coordinates(message):
+        global coordinates
+        coordinates = message.text
+        bot.send_message(message.chat.id, 'Введите количество этажей в здании')
+        bot.register_next_step_handler(message, get_floors)
+    def get_floors(message):
+        global floors
+        floors = message.text
+        bot.send_message(message.chat.id, 'Введите название оборудования')
+        bot.register_next_step_handler(message, get_equipment)
+    def get_equipment(message):
+        global equipment
+        equipment = message.text
+        bot.send_message(message.chat.id, 'Введите этаж, на котором оно размещено')
+        bot.register_next_step_handler(message, get_floor)
+    def get_floor(message):
+        global floor
+        floor = message.text
+        bot.send_message(message.chat.id, 'Введите количество часов, в течении которых оно будет использоваться')
+        bot.register_next_step_handler(message, get_hours)
+    def get_hours(message):
+        global hours
+        hours = message.text
+        try:
+            res = requests.post(url = "http://127.0.0.1:5000/add_employee", data = {'user_id':user_id,'name_of_building':name_of_building,'coordinates':coordinates, 'floors':floors,'equipment': equipment,'floor':floor,'hours':hours})
+        except: bot.send_message('Что-то не отправилось')
 
+bot.polling(non_stop=True)
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True)
