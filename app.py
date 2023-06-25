@@ -1,12 +1,14 @@
+import json
+import threading
+import time
+
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import SQLAlchemyError
 import requests
 import telebot
-import logging
-from geopy.geocoders import Nominatim
 from telebot import types
-API_URL = "http://45.8.249.62"
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///employees.db'
 bot = telebot.TeleBot('6137135992:AAEVNVGleKNCSXR0ursu3SrWzdlpV49xRWY')
@@ -105,6 +107,7 @@ def update_employee(id):
     except SQLAlchemyError as e:
         error = str(e.dict.get('orig', e))
         return jsonify({'error': error}), 500
+
 @bot.message_handler(commands=['start'])
 def start_message(message):
     markup = types.ReplyKeyboardMarkup()
@@ -146,9 +149,61 @@ def get_text_messages(message):
     def get_hours(message):
         global hours
         hours = message.text
-        res = requests.post(url = "http://45.8.249.62/add_employee", data = {'user_id':user_id,'name_of_building':name_of_building,'coordinates':coordinates, 'floors':floors,'equipment': equipment,'floor':floor,'hours':hours})
+        res = requests.post(url = "http://192.168.0.104:5000/add_employee", data = {'user_id':user_id,'name_of_building':name_of_building,'coordinates':coordinates, 'floors':floors,'equipment': equipment,'floor':floor,'hours':hours})
+        return True
 
 
-bot.polling(non_stop=True)
+
+@bot.message_handler(func=lambda message: message.text=="Получить информацию")
+def get_text(message):
+    res = requests.get(url="http://192.168.0.104:5000/get_employee/1")
+    bot.send_message(message.chat.id, 'answer')
+    #jsona = json.loads(res.text.replace("\n", ""))
+'''
+    try:
+        user_id = jsona["user_id"]
+        name_of_building = request.json.get('name_of_building', employee.name_of_building)
+        coordinates = request.json.get('coordinates', employee.coordinates)
+        floors = request.json.get('floors', employee.floors)
+        equipment = request.json.get('equipment', employee.equipment)
+        floor = request.json.get('floor', employee.floor)
+        hours = request.json.get('hours', employee.hours)
+        object_name = jsona["object_name"]
+        object_name = object_name[list(object_name.keys())[0]]
+
+        object_description = jsona["object_description"]
+        object_description_data = []
+        for key in object_description:
+            object_description_data.append(object_description[key])
+
+        location = jsona["location"]
+        location_data = []
+        for key in location:
+            location_data.append(location[key])
+
+        deadline = jsona["deadline"]
+        deadline_data = []
+        for key in deadline:
+            deadline_data.append(deadline[key])
+
+        answer = f"Название объекта: {object_name}\n"
+        answer += f"Описание объекта: {object_description_data}\n"
+        answer += f"Сроки реализации/запуска объекта: {location_data}\n"
+        answer += f"Местоположение объекта: {deadline_data}\n"
+
+        bot.send_message(message.chat.id, answer)
+    bot.send_message(message.chat.id, responce)
+'''
+
+
+
+def sending():
+    bot.polling()
+    pass
+
+
+my_thread = threading.Thread(target=sending)
+my_thread.start()
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True)
+
