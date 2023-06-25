@@ -6,7 +6,7 @@ import telebot
 import logging
 from geopy.geocoders import Nominatim
 from telebot import types
-API_URL = "http://127.0.0.1:5000"
+API_URL = "http://45.8.249.62"
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///employees.db'
 bot = telebot.TeleBot('6137135992:AAEVNVGleKNCSXR0ursu3SrWzdlpV49xRWY')
@@ -147,7 +147,7 @@ def get_text_messages(message):
         global hours
         hours = message.text
         try:
-            res = requests.post(url = "http://127.0.0.1:5000/add_employee", data = {'user_id':user_id,'name_of_building':name_of_building,'coordinates':coordinates, 'floors':floors,'equipment': equipment,'floor':floor,'hours':hours})
+            res = requests.post(url = "http://45.8.249.62/add_employee", data = {'user_id':user_id,'name_of_building':name_of_building,'coordinates':coordinates, 'floors':floors,'equipment': equipment,'floor':floor,'hours':hours})
         except: bot.send_message('Что-то не отправилось')
 
 bot.polling(non_stop=True)
