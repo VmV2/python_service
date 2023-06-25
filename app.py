@@ -146,9 +146,8 @@ def get_text_messages(message):
     def get_hours(message):
         global hours
         hours = message.text
-        try:
-            res = requests.post(url = "http://45.8.249.62/add_employee", data = {'user_id':user_id,'name_of_building':name_of_building,'coordinates':coordinates, 'floors':floors,'equipment': equipment,'floor':floor,'hours':hours})
-        except: bot.send_message('Что-то не отправилось')
+        res = requests.post(url = "http://45.8.249.62/add_employee", data = {'user_id':user_id,'name_of_building':name_of_building,'coordinates':coordinates, 'floors':floors,'equipment': equipment,'floor':floor,'hours':hours})
+
 
 bot.polling(non_stop=True)
 if __name__ == "__main__":
