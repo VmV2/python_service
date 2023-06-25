@@ -149,14 +149,14 @@ def get_text_messages(message):
     def get_hours(message):
         global hours
         hours = message.text
-        res = requests.post(url = "http://192.168.0.104:5000/add_employee", data = {'user_id':user_id,'name_of_building':name_of_building,'coordinates':coordinates, 'floors':floors,'equipment': equipment,'floor':floor,'hours':hours})
+        res = requests.post(url = "http://45.8.249.62:5000/add_employee", data = {'user_id':user_id,'name_of_building':name_of_building,'coordinates':coordinates, 'floors':floors,'equipment': equipment,'floor':floor,'hours':hours})
         return True
 
 
 
 @bot.message_handler(func=lambda message: message.text=="Получить информацию")
 def get_text(message):
-    res = requests.get(url="http://192.168.0.104:5000/get_employee/1")
+    res = requests.get(url="http://45.8.249.62:5000/get_employee/1")
     bot.send_message(message.chat.id, 'answer')
     #jsona = json.loads(res.text.replace("\n", ""))
 '''
