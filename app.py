@@ -4,7 +4,7 @@ import time
 
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, StatementError
 import requests
 import telebot
 from telebot import types
@@ -52,11 +52,26 @@ def add_employee():
     db.session.commit()
     return {"success": 'Employee added successfully'}
 
-@app.route('/get_employee/<int:id>')
+@app.route('/get_employees/<int:id>',methods=['GET'])
+def get_employees(id):
+    employees=Employee.query.get(id)
+    return jsonify({
+
+        'user_id': employees.id,
+        'name_of_building': employees.name_of_building,
+        'coordinates': employees.coordinates,
+        'floors': employees.floors,
+        'equipment': employees.equipment,
+        'floor': employees.floor,
+        'hours': employees.hours,
+        })
+
+
+@app.route('/get_employee/<int:id>',methods=['GET'])
 def get_employee(id):
     employee = Employee.query.get(id)
     if employee:
-        return jsonify({
+        return {
             'id': employee.id,
             'user_id': employee.user_id,
             'name_of_building': employee.name_of_building,
@@ -65,7 +80,7 @@ def get_employee(id):
             'equipment': employee.equipment,
             'floor': employee.floor,
             'hours': employee.hours,
-        })
+        }
     else:
         return {'error': 'Employee not found'}
 @app.route('/delete_employee/int:id', methods=['DELETE'])
@@ -73,13 +88,13 @@ def delete_employee(id):
     try:
         employee = Employee.query.get(id)
         if not employee:
-            return jsonify({'error': 'Employee not found'}), 404
+            return {'error': 'Employee not found'}, 404
         db.session.delete(employee)
         db.session.commit()
-        return jsonify({'message': 'Employee deleted successfully'})
+        return {'message': 'Employee deleted successfully'}
     except SQLAlchemyError as e:
         error = str(e.dict.get('orig', e))
-        return jsonify({'error': error}), 500
+        return {'error': error}, 500
 
 @app.route('/update_employee/int:id', methods=['PUT'])
 def update_employee(id):
@@ -103,10 +118,18 @@ def update_employee(id):
         employee.floor = floor
         employee.hours = hours
         db.session.commit()
-        return jsonify({'message': 'Employee updated successfully'})
+        return {'message': 'Employee updated successfully'}
     except SQLAlchemyError as e:
         error = str(e.dict.get('orig', e))
-        return jsonify({'error': error}), 500
+        return {'error': error}, 500
+
+@bot.message_handler(commands=['delete'])
+def start_message(message):
+    bot.send_message(message.chat.id, 'Введите номер объекта для удаления')
+    @bot.message_handler(content_types=['text'])
+    def get_name_of_building(message):
+        delet_elem=message.text
+        res = requests.delete(url=f"http://45.8.249.62/delete_employee/{delet_elem}")
 
 @bot.message_handler(commands=['start'])
 def start_message(message):
@@ -149,51 +172,43 @@ def get_text_messages(message):
     def get_hours(message):
         global hours
         hours = message.text
-        res = requests.post(url = "http://45.8.249.62:5000/add_employee", data = {'user_id':user_id,'name_of_building':name_of_building,'coordinates':coordinates, 'floors':floors,'equipment': equipment,'floor':floor,'hours':hours})
+        try:
+            res = requests.post("http://45.8.249.62/add_employee", data = {'user_id':user_id,'name_of_building':name_of_building,'coordinates':coordinates, 'floors':floors,'equipment': equipment,'floor':floor,'hours':hours})
+            bot.send_message(message.chat.id, 'Добавлено')
+        except StatementError:
+            bot.send_message(message.chat.id, 'Не добавлено, данные имеют не тот тип')
+        bot.register_next_step_handler(message, start_message)
         return True
-
 
 
 @bot.message_handler(func=lambda message: message.text=="Получить информацию")
 def get_text(message):
-    res = requests.get(url="http://45.8.249.62:5000/get_employee/1")
-    bot.send_message(message.chat.id, 'answer')
-    #jsona = json.loads(res.text.replace("\n", ""))
-'''
-    try:
-        user_id = jsona["user_id"]
-        name_of_building = request.json.get('name_of_building', employee.name_of_building)
-        coordinates = request.json.get('coordinates', employee.coordinates)
-        floors = request.json.get('floors', employee.floors)
-        equipment = request.json.get('equipment', employee.equipment)
-        floor = request.json.get('floor', employee.floor)
-        hours = request.json.get('hours', employee.hours)
-        object_name = jsona["object_name"]
-        object_name = object_name[list(object_name.keys())[0]]
+    bot.send_message(message.chat.id, 'Введите номер объекта')
+    @bot.message_handler(content_types=['text'])
+    def get_name_of_building(message):
+        user=message.text
+        res = requests.get(f"http://45.8.249.62/get_employee/{user}")
+        #res = requests.get(f'http://192.168.0.104:5000/get_data?name_of_building={object_name}')
+        jsona = json.loads(res.text.replace("\n", ""))
+        try:
+            name_of_building = jsona["name_of_building"]
+            object_coordinates = jsona["coordinates"]
+            object_floors = jsona["floors"]
+            object_hours = jsona["hours"]
+            equipment = jsona["equipment"]
+            floor = jsona["floor"]
 
-        object_description = jsona["object_description"]
-        object_description_data = []
-        for key in object_description:
-            object_description_data.append(object_description[key])
+            answer = f"Название объекта: {name_of_building}\n"
+            answer += f"Адрес объекта: {object_coordinates}\n"
+            answer += f"Количество этажей: {object_floors}\n"
+            answer += f"Оборудование: {equipment}\n"
+            answer += f"Этаж: {floor}\n"
+            answer += f"Количество часов, затараченное на объекте: {object_hours}\n"
+            bot.send_message(message.chat.id, answer)
+        except IndexError:
+            bot.send_message(message.chat.id, 'Такого объекта нет')
+        bot.register_next_step_handler(message,start_message)
 
-        location = jsona["location"]
-        location_data = []
-        for key in location:
-            location_data.append(location[key])
-
-        deadline = jsona["deadline"]
-        deadline_data = []
-        for key in deadline:
-            deadline_data.append(deadline[key])
-
-        answer = f"Название объекта: {object_name}\n"
-        answer += f"Описание объекта: {object_description_data}\n"
-        answer += f"Сроки реализации/запуска объекта: {location_data}\n"
-        answer += f"Местоположение объекта: {deadline_data}\n"
-
-        bot.send_message(message.chat.id, answer)
-    bot.send_message(message.chat.id, responce)
-'''
 
 
 
